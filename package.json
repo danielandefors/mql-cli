@@ -10,5 +10,12 @@
   "preferGlobal": true,
   "bin": {
     "mql-cli": "index.js"
+  },
+  "dependencies": {
+    "colors": "^1.1.2",
+    "readline": "0.0.8",
+    "request": "^2.58.0",
+    "xml2js": "^0.4.9",
+    "xmlbuilder": "^2.6.4"
   }
 }
