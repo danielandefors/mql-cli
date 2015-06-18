@@ -1,0 +1,14 @@
+{
+  "name": "mql-cli",
+  "version": "1.0.0",
+  "description": "CLI that allows you to execute MQL over HTTP",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "danielandefors",
+  "license": "ISC",
+  "preferGlobal": true,
+  "bin": {
+    "mql-cli": "index.js"
+  }
+}
