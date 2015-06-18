@@ -5,6 +5,7 @@
 var enovia = require('./lib/enovia-xml-http.js');
 var readline = require('readline');
 var colors = require('colors');
+var quote = require('shell-quote');
 var url = require('url');
 
 var rl = readline.createInterface(process.stdin, process.stdout, completer);
@@ -109,6 +110,36 @@ function startSpinner(message) {
   };
 }
 
+function login(user, password, callback) {
+  rl.pause();
+  var spinner = startSpinner();
+  enovia.login({user: user, password: password}, function(error, user) {
+    spinner.cancel();
+    if (error) {
+      console.log(error.toString().red);
+    }
+    rl.resume();
+    callback();
+  });
+}
+
+// this code is ugly... clean it up!~
+function isSetContext(tokens) {
+  if (tokens.length == 4 || tokens.length == 6) {
+    if (eq('set', 3, tokens[0]) && eq('context', 4, tokens[1]) && (eq('user', 4, tokens[2]) || eq('person', 5, tokens[2]))) {
+      if (tokens.length == 4) {
+        return { user: tokens[3], password: '' };
+      } else if (eq('password', 4, tokens[4])) {
+        return { user: tokens[3], password: tokens[5] };
+      }
+    }
+  }
+}
+
+function eq(keyword, minlen, s) {
+  return s.length >= minlen && keyword.indexOf(s.toLowerCase()) === 0;
+}
+
 rl.on('line', function(line) {
   switch (line.trim()) {
     case "q":
@@ -119,32 +150,37 @@ rl.on('line', function(line) {
     case "uri":
     case "url":
     case "server":
+      // Change the server URL
       askUri(function() {
         prompt();
       });
       break;
     case "login":
-      ensureUri(function() {
-        askCredentials(function(user, password) {
-          rl.pause();
-          var spinner = startSpinner();
-          enovia.login({user: user, password: password}, function(error, user) {
-            spinner.cancel();
-            if (error) {
-              console.log(error.toString().red);
-            } else {
-              console.log("Success!".green);
-            }
-            rl.resume();
-            prompt();
-          });
+      // Ask for credentials and authenticate
+      askCredentials(function(user, password) {
+        login(user, password, function() {
+          prompt();
         });
       });
       break;
     default:
-      if (line.trim().length > 0) {
+      // Otherwise, process server command...
+      var command = line.trim().replace(/;$/, '');
+      if (command.length > 0) {
         rl.pause();
-        enovia.exec(line, function(error, result) {
+
+        // Parse command to see if the user is trying to login
+        var tokens = quote.parse(command);
+        var params = isSetContext(tokens);
+        if (params) {
+          login(params.user, params.password, function() {
+            prompt();
+          });
+          break;
+        }
+
+        // Execute command on the server
+        enovia.exec(command, function(error, result) {
           if (error) {
             console.log(error.toString().red);
           } else if (result) {
@@ -187,5 +223,6 @@ rl.on('close', function() {
   process.exit(0);
 });
 
-prompt();
-
+ensureUri(function() {
+  prompt();
+});
