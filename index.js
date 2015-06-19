@@ -66,12 +66,17 @@ function ask(name, defaultValue, callback) {
 
 function askUri(callback) {
   ask('url', enovia.uri, function(x) {
-    if (!x.match(/^https?:\/\/.*$/)) {
-      x = 'http://' + x;
+    x = x.trim();
+    if (!x) {
+      askUri(callback);
+    } else {
+      if (!x.match(/^https?:\/\/.*$/)) {
+        x = 'http://' + x;
+      }
+      var parsed = url.parse(x);
+      enovia.uri = parsed.href;
+      callback();
     }
-    var parsed = url.parse(x);
-    enovia.uri = parsed.href;
-    callback();
   });
 }
 
