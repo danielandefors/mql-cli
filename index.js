@@ -65,7 +65,8 @@ function ask(name, defaultValue, callback) {
 }
 
 function askUri(callback) {
-  ask('url', enovia.uri, function(x) {
+  ask('url', enovia.uri || process.env.MQLURI || '', function(x) {
+    rl.pause();
     x = x.trim();
     if (!x) {
       askUri(callback);
@@ -75,7 +76,22 @@ function askUri(callback) {
       }
       var parsed = url.parse(x);
       enovia.uri = parsed.href;
-      callback();
+
+      var spinner = startSpinner();
+      enovia.exec('version', function(error, result) {
+        spinner.cancel();
+        var err = error || result.error;
+        if (err) {
+          console.log(("- error connecting to: " + enovia.uri).red);
+          console.log(("- " + err).red);
+          askUri(callback);
+        } else {
+          console.log(("- connected to: " + enovia.uri).green);
+          console.log(("- server version: " + result.output).green);
+          rl.resume();
+          callback();
+        }
+      });
     }
   });
 }
@@ -122,6 +138,8 @@ function login(user, password, callback) {
     spinner.cancel();
     if (error) {
       console.log(error.toString().red);
+    } else {
+      console.log(("- connected as: " + enovia.user).green);
     }
     rl.resume();
     callback();
