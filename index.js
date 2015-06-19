@@ -10,9 +10,11 @@ var url = require('url');
 
 var rl = readline.createInterface(process.stdin, process.stdout, completer);
 var connected = false;
+var questionAnswers = undefined;
+var commands = ['login', 'url', 'info', 'monitor', 'quit'];
 
 function completer(line) {
-  var completions = connected ? 'login url info monitor quit'.split(' ') : []
+  var completions = questionAnswers ? questionAnswers : commands;
   var hits = completions.filter(function(c) {
     if (c.indexOf(line) == 0) {
       return c;
@@ -55,19 +57,23 @@ function prompt() {
 
 /** Asks the user a question */
 function ask(name, defaultValue, callback) {
+  var answers = []
   var question = "? ".green;
   question += name + ": ";
   if (defaultValue) {
+    answers.push(defaultValue);
     question += ("[" + defaultValue + "] ").grey;
   }
+  questionAnswers = answers;
   rl.question(question, function(newValue) {
+    questionAnswers = undefined;
     callback(newValue || defaultValue || '');
   });
 }
 
 function askUri(callback) {
   connected = false;
-  ask('url', enovia.uri || process.env.MQLURI || '', function(x) {
+  ask('url', enovia.uri || process.env.MQLURI || enovia.defaultUri, function(x) {
     rl.pause();
     x = x.trim();
     if (!x) {
