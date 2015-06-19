@@ -9,9 +9,10 @@ var quote = require('shell-quote');
 var url = require('url');
 
 var rl = readline.createInterface(process.stdin, process.stdout, completer);
+var connected = false;
 
 function completer(line) {
-  var completions = 'login url info monitor quit'.split(' ')
+  var completions = connected ? 'login url info monitor quit'.split(' ') : []
   var hits = completions.filter(function(c) {
     if (c.indexOf(line) == 0) {
       return c;
@@ -65,6 +66,7 @@ function ask(name, defaultValue, callback) {
 }
 
 function askUri(callback) {
+  connected = false;
   ask('url', enovia.uri || process.env.MQLURI || '', function(x) {
     rl.pause();
     x = x.trim();
@@ -89,6 +91,7 @@ function askUri(callback) {
           console.log(("- connected to: " + enovia.uri).green);
           console.log(("- server version: " + result.output).green);
           rl.resume();
+          connected = true;
           callback();
         }
       });
@@ -111,7 +114,7 @@ function askCredentials(callback) {
 function startSpinner(message) {
   var stream = process.stderr;
   if (!stream.isTTY) {
-    return function() {};
+    return { cancel: function() {} };
   }
   var tick = 0;
   var symbols = "-\\|/";
@@ -132,6 +135,7 @@ function startSpinner(message) {
 }
 
 function login(user, password, callback) {
+  connected = false;
   rl.pause();
   var spinner = startSpinner();
   enovia.login({user: user, password: password}, function(error, user) {
@@ -142,6 +146,7 @@ function login(user, password, callback) {
       console.log(("- connected as: " + enovia.user).green);
     }
     rl.resume();
+    connected = true;
     callback();
   });
 }
@@ -209,6 +214,7 @@ function prettyDuration(durStr) {
 }
 
 rl.on('line', function(line) {
+  if (!connected) return;
   switch (line.trim()) {
     case "q":
     case "quit":
