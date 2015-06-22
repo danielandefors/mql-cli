@@ -198,7 +198,7 @@ function singleValue(maybeValue) {
 }
 
 function prettyDuration(durStr) {
-  var matches = durStr.match(/^P(\d+H)?(\d+M)?(\d+S)$/);
+  var matches = durStr.match(/^P(\d+DT)?(\d+H)?(\d+M)?(\d+S)$/);
   if (!matches) return durStr;
   var pretty = [];
   for (var i = 1; i < matches.length; i++) {
@@ -207,6 +207,7 @@ function prettyDuration(durStr) {
     var value = parseInt(x);
     var unit = x.charAt(x.length-1);
     switch (unit) {
+      case 'T': unit = 'day'; break;
       case 'H': unit = 'hour'; break;
       case 'M': unit = 'minute'; break;
       case 'S': unit = 'second'; break;
